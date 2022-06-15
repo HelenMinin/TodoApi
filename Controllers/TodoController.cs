@@ -1,9 +1,10 @@
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToDo.Data;
 using ToDo.Models;
+using ToDo.ViewModels;
 
 namespace ToDo.Controllers
 {
@@ -32,6 +33,32 @@ namespace ToDo.Controllers
                 .FirstOrDefaultAsync(x=>x.Id == id);
               
             return todo == null ? NotFound() : Ok(todo);
+        }
+
+        [HttpPost("todos")]
+        public async Task<IActionResult> PostAsync([FromServices]AppDbContext context,[FromBody] CreateTodoViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+            
+            var todo = new Todo
+            {
+                Date = DateTime.Now,
+                Done = false,
+                Title = model.Title
+            };
+            
+            try
+            {
+                await context.Todos.AddAsync((todo));
+                await context.SaveChangesAsync();
+                return Created("v1/todos/{todo.id}", todo);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e);
+            }
+           
         }
     }
 }
